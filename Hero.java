@@ -11,4 +11,5 @@ public interface Hero {
     public void levelupgrade();
     public int getxp();
     public int getlevel();
+    public void setxp(int XP);
 }

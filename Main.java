@@ -223,6 +223,7 @@ class User {
         if(m.gethp()==0) {
             System.out.println("Monster killed!");
             System.out.println(this.getHero().getxp()+" XP awarded.");
+            this.getHero().setxp(m.getLevel()*20);
             System.out.println("Level Up: level:"+this.getHero().getlevel());
             System.out.println("Fight won proceed to the next location.");
         }
@@ -270,7 +271,7 @@ class hero {
     }
 
     public void setXP(int XP) {
-        this.XP = XP;
+        this.XP += XP;
     }
 
     public double getHP() {
@@ -329,6 +330,11 @@ class Warrior extends hero implements Hero {
     }
 
     @Override
+    public void setxp(int XP) {
+        setXP(XP);
+    }
+
+    @Override
     public String getName() {
         return this._name;
     }
@@ -375,6 +381,11 @@ class Thief extends hero implements Hero {
     }
 
     @Override
+    public void setxp(int XP) {
+        setXP(XP);
+    }
+
+    @Override
     public void special_power(Monster m,int moves) {
         this.sethp(this.gethp()+0.3*m.gethp());
         m.sethp(0.7*m.gethp());
@@ -417,6 +428,11 @@ class Mage extends hero implements Hero {
     @Override
     public void sethp(double HP) {
         setHP(HP);
+    }
+
+    @Override
+    public void setxp(int XP) {
+        setXP(XP);
     }
 
     @Override
@@ -466,6 +482,11 @@ class Healer extends hero implements Hero {
     @Override
     public double gethp() {
         return getHP();
+    }
+
+    @Override
+    public void setxp(int XP) {
+        setXP(XP);
     }
 
     @Override
