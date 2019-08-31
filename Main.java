@@ -53,6 +53,7 @@ class Game {
 }
 
 class User {
+    private Stack<Integer> levels_completed = new Stack<Integer>();
     private Graph graph;
     final private String _name;
     private Hero _h;
@@ -96,6 +97,7 @@ class User {
         this.loadGame();
     }
     void loadGame() throws java.io.IOException {
+        //this.levels_completed.push(-1);
         BufferedReader buffer = new BufferedReader(new InputStreamReader(System.in));
         if(this.getLocation() == -1) {
             System.out.println("You are at the starting location. Choose path");
@@ -110,18 +112,21 @@ class User {
             System.out.println("1) Go to location "+l1);
             System.out.println("2) Go to location "+l2);
             System.out.println("3) Go to location "+l3);
-            System.out.println("4) Enter -1 to exit");
+            System.out.println("Enter -1 to exit");
             int option = Integer.parseInt(buffer.readLine());
             if(option == -1) {
                 return;
             }
             else if(option == 1) {
+                this.levels_completed.push(option);
                 this.setLocation(this.getLocation()+1);
             }
             else if(option == 2) {
+                this.levels_completed.push(option);
                 this.setLocation(this.getLocation()+4);
             }
             else {
+                this.levels_completed.push(option);
                 this.setLocation(this.getLocation()+7);
             }
 
@@ -133,20 +138,26 @@ class User {
             System.out.println("1) Go to location "+l1);
             System.out.println("2) Go to location "+l2);
             System.out.println("3) Go to location "+l3);
-            System.out.println("4) Enter -1 to exit");
-            System.out.println("5) Go back");
+            System.out.println("4) Go back");
+            System.out.println("Enter -1 to exit");
             int option = Integer.parseInt(buffer.readLine());
             if(option == -1) {
                 return;
             }
             else if(option == 1) {
+                levels_completed.push(option);
                 this.setLocation(this.getLocation()-2);
             }
             else if(option == 2) {
+                levels_completed.push(option);
                 this.setLocation(this.getLocation()+1);
             }
-            else {
+            else if(option == 3) {
+                levels_completed.push(option);
                 this.setLocation(this.getLocation()+4);
+            }
+            else if(option == 4) {
+                this.setLocation(levels_completed.peek());
             }
         }
         else if(this.getLocation() == 2 || this.getLocation() == 5 || this.getLocation() == 8) {
@@ -160,20 +171,26 @@ class User {
             System.out.println("1) Go to location "+l1);
             System.out.println("2) Go to location "+l2);
             System.out.println("3) Go to location "+l3);
-            System.out.println("4) Enter -1 to exit");
-            System.out.println("5) Go back");
+            System.out.println("4) Go back");
+            System.out.println("Enter -1 to exit");
             int option = Integer.parseInt(buffer.readLine());
             if(option == -1) {
                 return;
             }
             else if(option == 1) {
+                levels_completed.push(option);
                 this.setLocation(this.getLocation()-5);
             }
             else if(option == 2) {
+                levels_completed.push(option);
                 this.setLocation(this.getLocation()-2);
             }
-            else {
+            else if(option == 3){
+                levels_completed.push(option);
                 this.setLocation(this.getLocation()+1);
+            }
+            else if(option == 4) {
+                this.setLocation(levels_completed.peek());
             }
         }
         this.moveLocation();
@@ -223,9 +240,11 @@ class User {
         if(m.gethp()==0) {
             System.out.println("Monster killed!");
             System.out.println(this.getHero().getxp()+" XP awarded.");
-            this.getHero().setxp(m.getLevel()*20);
+            this.getHero().setxp((int)(m.getLevel()*20));
             System.out.println("Level Up: level:"+this.getHero().getlevel());
+            this.getHero().setlevel();
             System.out.println("Fight won proceed to the next location.");
+            loadGame();
         }
     }
 }
@@ -234,22 +253,19 @@ class hero {
 
     public int level = 1;
     public int XP = 0;
-    public double HP = 100;
+    public int HP = 100;
 
     public void setLevel() {
-        if(this.getLevel() == 1) {
+        if(this.getLevel() == 1 && this.getXP() == 20) {
             this.setHP(150);
-            this.setXP(20);
             this.level++;
         }
-        else if(this.getLevel() == 2) {
+        else if(this.getLevel() == 2 && this.getXP() == 40) {
             this.setHP(200);
-            this.setXP(40);
             this.level++;
         }
-        else if(this.getLevel() == 3) {
+        else if(this.getLevel() == 3 && this.getXP() == 60) {
             this.setHP(250);
-            this.setXP(60);
             this.level++;
         }
     }
@@ -262,7 +278,7 @@ class hero {
         return this.XP;
     }
 
-    public void setHP(double HP) {
+    public void setHP(int HP) {
         if(HP < 0) {
             this.HP = HP;
             return;
@@ -274,7 +290,7 @@ class hero {
         this.XP += XP;
     }
 
-    public double getHP() {
+    public int getHP() {
         return this.HP;
     }
 }
@@ -303,6 +319,11 @@ class Warrior extends hero implements Hero {
     }
 
     @Override
+    public void setlevel() {
+        setLevel();
+    }
+
+    @Override
     public void special_power(Monster m,int moves) {
         if(moves == 3) {
 
@@ -315,12 +336,12 @@ class Warrior extends hero implements Hero {
     }
 
     @Override
-    public double gethp() {
+    public int gethp() {
         return getHP();
     }
 
     @Override
-    public void sethp(double HP) {
+    public void sethp(int HP) {
         setHP(HP);
     }
 
@@ -354,7 +375,7 @@ class Thief extends hero implements Hero {
     private String _name = "Thief";
 
     @Override
-    public double gethp() {
+    public int gethp() {
         return getHP();
     }
 
@@ -363,9 +384,13 @@ class Thief extends hero implements Hero {
         return getLevel();
     }
 
+    @Override
+    public void setlevel() {
+        setLevel();
+    }
 
     @Override
-    public void sethp(double HP) {
+    public void sethp(int HP) {
         setHP(HP);
     }
 
@@ -387,8 +412,8 @@ class Thief extends hero implements Hero {
 
     @Override
     public void special_power(Monster m,int moves) {
-        this.sethp(this.gethp()+0.3*m.gethp());
-        m.sethp(0.7*m.gethp());
+        this.sethp((int)(this.gethp()+0.3*m.gethp()));
+        m.sethp((int)(0.7*m.gethp()));
     }
 
     @Override
@@ -416,7 +441,7 @@ class Mage extends hero implements Hero {
     private String _name = "Mage";
 
     @Override
-    public double gethp() {
+    public int gethp() {
         return getHP();
     }
 
@@ -426,7 +451,12 @@ class Mage extends hero implements Hero {
     }
 
     @Override
-    public void sethp(double HP) {
+    public void setlevel() {
+        setLevel();
+    }
+
+    @Override
+    public void sethp(int HP) {
         setHP(HP);
     }
 
@@ -449,10 +479,10 @@ class Mage extends hero implements Hero {
     @Override
     public void special_power(Monster m,int moves) {
         if(moves == 7) {
-            m.sethp(m.gethp()+m.gethp()*0.05);
+            m.sethp((int)(m.gethp()+m.gethp()*0.05));
             return;
         }
-        m.sethp(m.gethp()*0.95);
+        m.sethp((int)(m.gethp()*0.95));
     }
 
     @Override
@@ -480,7 +510,7 @@ class Healer extends hero implements Hero {
     private String _name = "Healer";
 
     @Override
-    public double gethp() {
+    public int gethp() {
         return getHP();
     }
 
@@ -490,13 +520,18 @@ class Healer extends hero implements Hero {
     }
 
     @Override
-    public void sethp(double HP) {
+    public void sethp(int HP) {
         setHP(HP);
     }
 
     @Override
     public int getlevel() {
         return getLevel();
+    }
+
+    @Override
+    public void setlevel() {
+        setLevel();
     }
 
     @Override
@@ -513,9 +548,9 @@ class Healer extends hero implements Hero {
     @Override
     public void special_power(Monster m,int moves) {
         if(moves == 3) {
-            this.sethp(this.gethp()*0.95);
+            this.sethp((int)(this.gethp()*0.95));
         }
-        this.sethp(this.gethp()*1.05);
+        this.sethp((int)(this.gethp()*1.05));
     }
 
     @Override
@@ -535,27 +570,27 @@ class Healer extends hero implements Hero {
 
 class monster {
 
-    public double HP;
+    public int HP;
 
-    monster(double HP) {
+    monster(int HP) {
         this.HP = HP;
     }
 
-    void setHP(double HP) {
+    void setHP(int HP) {
         if(HP<=0) {
-            this.HP = HP;
+            this.HP = 0;
             return;
         }
         this.HP = HP;
     }
 
-    double getHP() {
+    int getHP() {
         return this.HP;
     }
 
     void attack(Hero h,int protection) {
         Random ran = new Random();
-        double damage = ran.nextGaussian();
+        int damage = (int)Math.round((this.getHP()/4)*(ran.nextGaussian()));
         h.sethp(h.gethp()+protection-damage);
     }
 
@@ -570,7 +605,7 @@ class Goblin extends monster implements Monster {
     }
 
     @Override
-    public double gethp() {
+    public int gethp() {
         return getHP();
     }
 
@@ -580,15 +615,15 @@ class Goblin extends monster implements Monster {
     }
 
     @Override
-    public void sethp(double HP) {
+    public void sethp(int HP) {
         setHP(HP);
     }
 
     @Override
     public void monster_attack(Hero h,int protection) {
-        double prev = h.gethp();
+        int prev = h.gethp();
         attack(h,protection);
-        double next = h.gethp();
+        int next = h.gethp();
         System.out.println("The monster attacked and inflicted "+(next-prev)+" damage to you.");
     }
 }
@@ -602,7 +637,7 @@ class Zombie extends monster implements Monster {
     }
 
     @Override
-    public double gethp() {
+    public int gethp() {
         return getHP();
     }
 
@@ -612,15 +647,15 @@ class Zombie extends monster implements Monster {
     }
 
     @Override
-    public void sethp(double HP) {
+    public void sethp(int HP) {
         setHP(HP);
     }
 
     @Override
     public void monster_attack(Hero h,int protection) {
-        double prev = h.gethp();
+        int prev = h.gethp();
         attack(h,protection);
-        double next = h.gethp();
+        int next = h.gethp();
         System.out.println("The monster attacked and inflicted "+(next-prev)+" damage to you.");
     }
 }
@@ -632,11 +667,11 @@ class Fiend extends monster implements Monster {
         super(HP);
     }
     @Override
-    public double gethp() {
+    public int gethp() {
         return getHP();
     }
     @Override
-    public void sethp(double HP) {
+    public void sethp(int HP) {
         setHP(HP);
     }
     @Override
@@ -645,9 +680,9 @@ class Fiend extends monster implements Monster {
     }
     @Override
     public void monster_attack(Hero h,int protection) {
-        double prev = h.gethp();
+        int prev = h.gethp();
         attack(h,protection);
-        double next = h.gethp();
+        int next = h.gethp();
         System.out.println("The monster attacked and inflicted "+(next-prev)+" damage to you.");
     }
 }
@@ -660,7 +695,7 @@ class Lionfang extends monster implements Monster {
     }
 
     @Override
-    public double gethp() {
+    public int gethp() {
         return getHP();
     }
 
@@ -670,15 +705,20 @@ class Lionfang extends monster implements Monster {
     }
 
     @Override
-    public void sethp(double HP) {
+    public void sethp(int HP) {
         setHP(HP);
+    }
+
+    void attack(Hero h,int protection) {
+        int damage = (int)Math.round(0.1*0.5*h.gethp());
+        h.sethp(h.gethp()-damage+protection);
     }
 
     @Override
     public void monster_attack(Hero h,int protection) {
-        double prev = h.gethp();
-        attack(h,protection);
-        double next = h.gethp();
+        int prev = h.gethp();
+        this.attack(h,protection);
+        int next = h.gethp();
         System.out.println("The monster attacked and inflicted "+(next-prev)+" damage to you.");
     }
 }
