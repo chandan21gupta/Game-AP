@@ -13,4 +13,6 @@ public interface Hero {
     public int getlevel();
     public void setxp(int XP);
     public void setlevel();
+    public void buy(Sidekick s, int xp);
+    public void setDefense(int protection);
 }

@@ -54,10 +54,12 @@ class Game {
 
 class User {
     private Stack<Integer> levels_completed = new Stack<Integer>();
+    private ArrayList<Sidekick> sidekicks = new ArrayList<Sidekick>();
     private Graph graph;
     final private String _name;
     private Hero _h;
     private int location = -1;
+    private int flag_sidekick = 0;
     User(String name,int option) {
         graph = new Graph();
         this._name = name;
@@ -112,6 +114,9 @@ class User {
             System.out.println("1) Go to location "+l1);
             System.out.println("2) Go to location "+l2);
             System.out.println("3) Go to location "+l3);
+            if(this.levels_completed.size()>0) {
+                System.out.println("4) Go back");
+            }
             System.out.println("Enter -1 to exit");
             int option = Integer.parseInt(buffer.readLine());
             if(option == -1) {
@@ -125,9 +130,12 @@ class User {
                 this.levels_completed.push(option);
                 this.setLocation(this.getLocation()+4);
             }
-            else {
+            else if(option == 3){
                 this.levels_completed.push(option);
                 this.setLocation(this.getLocation()+7);
+            }
+            else if(option == 4) {
+                this.setLocation(levels_completed.peek());
             }
 
         }
@@ -138,7 +146,9 @@ class User {
             System.out.println("1) Go to location "+l1);
             System.out.println("2) Go to location "+l2);
             System.out.println("3) Go to location "+l3);
-            System.out.println("4) Go back");
+            if(levels_completed.size()>0) {
+                System.out.println("4) Go back");
+            }
             System.out.println("Enter -1 to exit");
             int option = Integer.parseInt(buffer.readLine());
             if(option == -1) {
@@ -171,7 +181,9 @@ class User {
             System.out.println("1) Go to location "+l1);
             System.out.println("2) Go to location "+l2);
             System.out.println("3) Go to location "+l3);
-            System.out.println("4) Go back");
+            if(levels_completed.size()>0) {
+                System.out.println("4) Go back");
+            }
             System.out.println("Enter -1 to exit");
             int option = Integer.parseInt(buffer.readLine());
             if(option == -1) {
@@ -200,14 +212,43 @@ class User {
         BufferedReader buffer = new BufferedReader(new InputStreamReader(System.in));
         int protection = 0;
         int moves = 0;
+        Sidekick player = null;
         this.graph.setMonster(this.getLocation());
         Monster m = this.graph.getMonster(this.getLocation());
         System.out.println("Fight Started. You are fighting a level "+m.getLevel()+" Monster.");
+        if(flag_sidekick == 1) {
+            System.out.println("Type yes if you wish to use a sidekick, else type no");
+            String o = buffer.readLine();
+            if(o.equals("yes")) {
+                //System.out.println("To execute here");
+                Collections.sort(sidekicks,new MaxSidekick());
+                player = sidekicks.get(sidekicks.size()-1);
+                //player.activate();
+                if(player.getName().equals("Minion")) {
+                    System.out.println("You have a sidekick "+player.getName()+" with you. Attack of sidekick 2.");
+                    System.out.println("Press c to use cloning ability. Else press f to move to the fight");
+                    String clone = buffer.readLine();
+                    if(clone.equals("c")) {
+                        player.activate(this.getHero(),m);
+                        System.out.println("Cloning done.");
+                    }
+                }
+                else if(player.getName().equals("Knight")) {
+                    System.out.println("You have a sidekick "+player.getName()+" with you. Attack of sidekick 2.");
+                    System.out.println("Press c to use knight's ability. Else press f to move to the fight");
+                    String clone = buffer.readLine();
+                    if(clone.equals("c")) {
+                        player.activate(this.getHero(),m);
+                        System.out.println("Knight's power activated.");
+                    }
+                }
+            }
+        }
         while(m.gethp() != 0 && this.getHero().gethp() != 0){
             System.out.println("Choose move:");
             System.out.println("1) Attack");
             System.out.println("2) Defense");
-            if(moves >= 4) {
+            if(moves >= 3) {
                 System.out.println("3) Special Attack");
             }
             int option = Integer.parseInt(buffer.readLine());
@@ -215,6 +256,9 @@ class User {
                 case 1 :
                     System.out.println("You choose to attack");
                     this.getHero().attack(m);
+                    if(player != null) {
+                        player.attack(m);
+                    }
                     moves++;
                     break;
                 case 2 :
@@ -230,22 +274,80 @@ class User {
             }
             System.out.println("Your HP: "+this.getHero().gethp()+" Monsters HP: "+m.gethp());
             System.out.println("Monster attack!");
-            m.monster_attack(this.getHero(),protection);
+            m.monster_attack(this.getHero(),player,protection);
             System.out.println("Your HP: "+this.getHero().gethp()+" Monsters HP: "+m.gethp());
             protection = 0;
             if(moves == 3) {
                 this.getHero().special_power(m, moves);
             }
         }
+        if(player!= null && player.gethp() == 0) {
+            System.out.println("Sidekick dead!!");
+            sidekicks.remove(player);
+        }
+        if(this.getHero().gethp() == 0) {
+            System.out.println("You died!!");
+            return;
+        }
         if(m.gethp()==0) {
             System.out.println("Monster killed!");
             System.out.println(this.getHero().getxp()+" XP awarded.");
             this.getHero().setxp((int)(m.getLevel()*20));
+            this.getHero().levelupgrade();
+            if(player != null) {
+                player.deactivate();
+                player.sethp(100);
+                player.setxp((int) (m.getLevel() * 2));
+                player.checkxp();
+            }
             System.out.println("Level Up: level:"+this.getHero().getlevel());
             this.getHero().setlevel();
             System.out.println("Fight won proceed to the next location.");
+            System.out.println("If you would like to buy a sidekick, type yes. Else type no to upgrade level.");
+            String n = buffer.readLine();
+            if(n.equals("yes")) {
+                System.out.println("Your current XP is "+this.getHero().getxp());
+                System.out.println("If you want to buy a minion, press 1");
+                System.out.println("If you want to buy a knight, press 2");
+                int op = Integer.parseInt(buffer.readLine());
+                System.out.print("XP to spend: ");
+                int xp = Integer.parseInt(buffer.readLine());
+                Sidekick s = null;
+                if(op == 1) {
+                    if(this.getHero().getxp() < 5) {
+                        System.out.println("Sorry! Not enough XP");
+                    }
+                    else {
+                        s = new Minion(xp,5);
+                    }
+                }
+                else if(op == 2) {
+                    if(this.getHero().getxp() < 7) {
+                        System.out.println("Sorry! Not enough XP");
+                    }
+                    else{
+                        s = new Knight(xp,7);
+                    }
+                }
+                if(s != null) {
+                    flag_sidekick = 1;
+                    this.sidekicks.add(s);
+                    this.getHero().buy(s,xp);
+                    System.out.println("Attack of sidekick is :"+s.getdamage());
+                }
+            }
             loadGame();
         }
+    }
+}
+
+class MaxSidekick implements Comparator<Sidekick> {
+    @Override
+    public int compare(Sidekick s1, Sidekick s2) {
+        if(s1.getxp() > s2.getxp()) {
+            return 1;
+        }
+        return -1;
     }
 }
 
@@ -257,17 +359,24 @@ class hero {
 
     public void setLevel() {
         if(this.getLevel() == 1 && this.getXP() == 20) {
+            this.setXP(0);
             this.setHP(150);
             this.level++;
         }
         else if(this.getLevel() == 2 && this.getXP() == 40) {
+            this.setXP(0);
             this.setHP(200);
             this.level++;
         }
         else if(this.getLevel() == 3 && this.getXP() == 60) {
+            this.setXP(0);
             this.setHP(250);
             this.level++;
         }
+    }
+
+    public void Buy(Sidekick s, int xp) {
+        s.setdamage(xp);
     }
 
     public int getLevel() {
@@ -311,6 +420,11 @@ class Warrior extends hero implements Hero {
     @Override
     public int defense(Monster m) {
         return this.protection;
+    }
+
+    @Override
+    public void setDefense(int protection) {
+        this.protection = protection;
     }
 
     @Override
@@ -364,6 +478,11 @@ class Warrior extends hero implements Hero {
     public void levelupgrade() {
         setLevel();
     }
+
+    @Override
+    public void buy(Sidekick s, int xp) {
+        Buy(s,xp);
+    }
 }
 
 class Thief extends hero implements Hero {
@@ -406,6 +525,11 @@ class Thief extends hero implements Hero {
     }
 
     @Override
+    public void setDefense(int protection) {
+        this.protection = protection;
+    }
+
+    @Override
     public void setxp(int XP) {
         setXP(XP);
     }
@@ -430,7 +554,13 @@ class Thief extends hero implements Hero {
     public int getxp() {
         return getXP();
     }
+
+    @Override
+    public void buy(Sidekick s, int xp) {
+        Buy(s,xp);
+    }
 }
+
 
 class Mage extends hero implements Hero {
 
@@ -477,8 +607,13 @@ class Mage extends hero implements Hero {
     }
 
     @Override
+    public void setDefense(int protection) {
+        this.protection = protection;
+    }
+
+    @Override
     public void special_power(Monster m,int moves) {
-        if(moves == 7) {
+        if(moves == 3) {
             m.sethp((int)(m.gethp()+m.gethp()*0.05));
             return;
         }
@@ -497,6 +632,11 @@ class Mage extends hero implements Hero {
     @Override
     public int getxp() {
         return getXP();
+    }
+
+    @Override
+    public void buy(Sidekick s, int xp) {
+        Buy(s,xp);
     }
 
 }
@@ -546,6 +686,11 @@ class Healer extends hero implements Hero {
     }
 
     @Override
+    public void setDefense(int protection) {
+        this.protection = protection;
+    }
+
+    @Override
     public void special_power(Monster m,int moves) {
         if(moves == 3) {
             this.sethp((int)(this.gethp()*0.95));
@@ -565,6 +710,231 @@ class Healer extends hero implements Hero {
     @Override
     public int getxp() {
         return getXP();
+    }
+
+    @Override
+    public void buy(Sidekick s, int xp) {
+        Buy(s,xp);
+    }
+}
+
+class sidekick {
+
+    private int damage;
+    private int XP = 0;
+    private int HP = 100;
+    private int price;
+
+    sidekick(int damage, int price) {
+        this.damage = damage - price;
+        this.price = price;
+    }
+
+    int getXP() {
+        return this.XP;
+    }
+
+    void setXP(int XP) {
+        this.XP = XP;
+    }
+
+    int getHP() {
+        return this.HP;
+    }
+
+    void setHP(int HP) {
+        this.HP = HP;
+    }
+
+    int getDamage() {
+        return this.damage;
+    }
+
+    void setDamage(int xp) {
+        this.damage += (int)Math.round(0.5*(xp - this.price));
+    }
+
+    void Attack(Monster m) {
+        m.sethp(m.gethp() - this.damage);
+    }
+
+    int getPrice() {
+        return this.price;
+    }
+
+    void checkXP() {
+        if(this.XP%5 == 0) {
+            this.damage+=1;
+        }
+    }
+
+}
+
+class Minion extends sidekick implements Sidekick, Cloneable {
+    private Sidekick s1;
+    private Sidekick s2;
+    private Sidekick s3;
+    private int clone_flag = 0;
+    private String name = "Minion";
+    Minion(int damage, int price) {
+        super(damage,price);
+    }
+
+    @Override
+    public void setdamage(int xp) {
+        setDamage(xp);
+    }
+
+    @Override
+    public int gethp() {
+        return getHP();
+    }
+
+    @Override
+    public void sethp(int HP) {
+        setHP(HP);
+    }
+    @Override
+    public void checkxp() {
+        checkXP();
+    }
+    @Override
+    public int getdamage() {
+        return getDamage();
+    }
+
+    @Override
+    public void attack(Monster m) {
+        Attack(m);
+            if (s1 != null && s2 != null && s3 != null) {
+                s1.attack(m);
+                System.out.println("The sidekick attacked and inflicted " + s1.getdamage() + " to the monster");
+                s2.attack(m);
+                System.out.println("The sidekick attacked and inflicted " + s1.getdamage() + " to the monster");
+                s3.attack(m);
+                System.out.println("The sidekick attacked and inflicted " + s1.getdamage() + " to the monster");
+                System.out.println("Sidekick Hp:" + s1.gethp());
+                System.out.println("Sidekick Hp:" + s1.gethp());
+                System.out.println("Sidekick Hp:" + s1.gethp());
+            }
+
+    }
+
+    @Override
+    public void deactivate() {
+        System.out.println("deactivating the clones");
+        s1 = null;
+        s2 = null;
+        s3 = null;
+        clone_flag = 1;
+    }
+
+    @Override
+    public int getprice() {
+        return getPrice();
+    }
+
+    @Override
+    public int getxp() {
+        return getXP();
+    }
+
+    @Override
+    public void setxp(int xp) {
+        setXP(xp);
+    }
+
+    @Override
+    public void activate(Hero h,Monster m) {
+        if(clone_flag == 0) {
+            s1 = this.clone();
+            s2 = this.clone();
+            s3 = this.clone();
+        }
+    }
+
+    @Override
+    public String getName() {
+        return this.name;
+    }
+
+    public Sidekick clone() {
+        try {
+            Sidekick s = (Minion) super.clone();
+            return s;
+        } catch (CloneNotSupportedException e) {
+            return null;
+        }
+    }
+}
+
+class Knight extends sidekick implements Sidekick {
+
+    private String name = "Knight";
+    Knight(int damage, int price) {
+        super(damage,price);
+    }
+
+    @Override
+    public void setdamage(int xp) {
+        setDamage(xp);
+    }
+
+    @Override
+    public int gethp() {
+        return getHP();
+    }
+
+    @Override
+    public void sethp(int HP) {
+        setHP(HP);
+    }
+
+    @Override
+    public int getdamage() {
+        return getDamage();
+    }
+
+    @Override
+    public void attack(Monster m) {
+        Attack(m);
+    }
+
+    @Override
+    public int getprice() {
+        return getPrice();
+    }
+
+    @Override
+    public int getxp() {
+        return getXP();
+    }
+
+    @Override
+    public void setxp(int xp) {
+        setXP(xp);
+    }
+
+    @Override
+    public void activate(Hero h,Monster m) {
+        if(m instanceof Zombie) {
+            h.setDefense(h.defense(m)+5);
+        }
+    }
+
+    @Override
+    public String getName() {
+        return this.name;
+    }
+
+    @Override
+    public void deactivate() {
+
+    }
+
+    @Override
+    public void checkxp() {
+        checkXP();
     }
 }
 
@@ -588,10 +958,14 @@ class monster {
         return this.HP;
     }
 
-    void attack(Hero h,int protection) {
+    void attack(Hero h,Sidekick s,int protection) {
         Random ran = new Random();
         int damage = (int)Math.round((this.getHP()/4)*(ran.nextGaussian()));
-        h.sethp(h.gethp()+protection-damage);
+        int netDamage = Math.abs(protection-damage);
+        h.sethp(h.gethp()+protection-netDamage);
+        if(s!=null) {
+            s.sethp(s.gethp() - (int) ((1.5) * damage));
+        }
     }
 
 }
@@ -620,11 +994,11 @@ class Goblin extends monster implements Monster {
     }
 
     @Override
-    public void monster_attack(Hero h,int protection) {
+    public void monster_attack(Hero h,Sidekick s,int protection) {
         int prev = h.gethp();
-        attack(h,protection);
+        attack(h,s,protection);
         int next = h.gethp();
-        System.out.println("The monster attacked and inflicted "+(next-prev)+" damage to you.");
+        System.out.println("The monster attacked and inflicted "+(prev-next)+" damage to you.");
     }
 }
 
@@ -652,9 +1026,9 @@ class Zombie extends monster implements Monster {
     }
 
     @Override
-    public void monster_attack(Hero h,int protection) {
+    public void monster_attack(Hero h,Sidekick s,int protection) {
         int prev = h.gethp();
-        attack(h,protection);
+        attack(h,s,protection);
         int next = h.gethp();
         System.out.println("The monster attacked and inflicted "+(next-prev)+" damage to you.");
     }
@@ -679,9 +1053,9 @@ class Fiend extends monster implements Monster {
         return this.level;
     }
     @Override
-    public void monster_attack(Hero h,int protection) {
+    public void monster_attack(Hero h,Sidekick s,int protection) {
         int prev = h.gethp();
-        attack(h,protection);
+        attack(h,s,protection);
         int next = h.gethp();
         System.out.println("The monster attacked and inflicted "+(next-prev)+" damage to you.");
     }
@@ -709,15 +1083,17 @@ class Lionfang extends monster implements Monster {
         setHP(HP);
     }
 
-    void attack(Hero h,int protection) {
+    void attack(Hero h,Sidekick s,int protection) {
         int damage = (int)Math.round(0.1*0.5*h.gethp());
-        h.sethp(h.gethp()-damage+protection);
+        int netDamage = Math.abs(protection - damage);
+        h.sethp(h.gethp()-netDamage);
+        s.sethp(s.gethp()-(int)(1.5*damage));
     }
 
     @Override
-    public void monster_attack(Hero h,int protection) {
+    public void monster_attack(Hero h,Sidekick s,int protection) {
         int prev = h.gethp();
-        this.attack(h,protection);
+        this.attack(h,s,protection);
         int next = h.gethp();
         System.out.println("The monster attacked and inflicted "+(next-prev)+" damage to you.");
     }
